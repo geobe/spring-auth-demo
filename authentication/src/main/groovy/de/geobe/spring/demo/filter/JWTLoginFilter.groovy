@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.web.context.WebApplicationContext
 import org.springframework.web.context.support.SpringBeanAutowiringSupport
@@ -31,7 +32,7 @@ import javax.servlet.http.HttpServletResponse
  */
 @Slf4j
 class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
-//    @Autowired
+
     TokenAuthenticationService tokenAuthenticationService
 
     public JWTLoginFilter(String url, AuthenticationManager authManager) {
@@ -42,7 +43,6 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
     @Override
     void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-//        SpringBeanAutowiringSupport.processInjectionBasedOnCurrentContext(this);
         if(tokenAuthenticationService==null){
             ServletContext servletContext = req.getServletContext();
             WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
@@ -68,7 +68,6 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
                             Collections.emptyList()
                     )
             )
-            log.info("Authentication: $authentication")
             return authentication
         } catch (Exception ex) {
             response.setStatus(HttpStatus.NOT_ACCEPTABLE.value())
@@ -88,4 +87,9 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 class AccountCredentials {
     String username;
     String password;
+
+    @Override
+    String toString() {
+        return "username: $username, password: $password"
+    }
 }

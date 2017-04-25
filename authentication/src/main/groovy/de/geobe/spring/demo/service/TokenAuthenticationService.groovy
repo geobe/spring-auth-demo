@@ -1,19 +1,25 @@
 package de.geobe.spring.demo.service
 
+import de.geobe.spring.demo.domain.Token
+import de.geobe.spring.demo.repository.TokenRepository
+import de.geobe.spring.demo.repository.UserRepository
+import de.geobe.spring.demo.security.TokenAuthentication
 import groovy.util.logging.Slf4j
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.impl.crypto.MacSigner
-import org.slf4j.bridge.SLF4JBridgeHandler
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.userdetails.User
+import org.springframework.security.crypto.encrypt.TextEncryptor
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
-
-import static java.util.Collections.emptyList
 
 /**
  * Created by georg beier on 18.04.2017.
@@ -36,31 +42,74 @@ class TokenAuthenticationService {
     static final String TOKEN_PREFIX = "Bearer";
     static final String HEADER_STRING = "Authorization";
 
+    @Autowired
+    UserRepository userRepository
+    @Autowired
+    TokenRepository tokenRepository
+    @Autowired
+    TextEncryptor textEncryptor
+
     private MacSigner authSigner
 
     /**
-     * adds authentification information to a response header.
+     * adds authentication information to a response header and stores authentication key
+     * in the database.
      * @param response response to be decorated
      * @param username authentication information
      */
-    void addAuthentication(HttpServletResponse response, Authentication authentication) {
+    void addAuthentication(HttpServletResponse response,
+                           UsernamePasswordAuthenticationToken authentication) {
+        String uname
+        if (authentication.principal instanceof User) {
+            uname = ((User) authentication.principal).username
+        } else {
+            uname = authentication.principal.toString()
+        }
         String JWT = Jwts.builder()
-                .setClaims([principal  : authentication.principal,
+                .setClaims([principal  : uname,
                             authorities: authentication.authorities,
-                            credentials: makeCredentials(authentication)])
-                .setSubject(authentication.principal.toString())
+                            credentials: storeCredentials(uname, authentication.authorities)])
+                .setSubject(uname)
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
                 .signWith(SignatureAlgorithm.forName(ALGORITHM), SECRET)
                 .compact();
         response.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + JWT);
-        log.info("Authentication: $authentication")
+        log.info("addAuthentication done")
     }
 
-    public String makeCredentials(Authentication authentication) {
-        byte[] data = authentication.principal.toString().bytes
-        if(! authSigner) authSigner =
-                new MacSigner(SignatureAlgorithm.forName(ALGORITHM), TOKENKEY.bytes)
-        return Base64.getEncoder().encodeToString(authSigner.sign(data))
+    /**
+     * encrypt and encode message containing principal information using shared secret
+     * @param msg plain message
+     * @return base64 encoded encrypted message
+     */
+    public String encryptPrincipal(String msg) {
+        return Base64.getEncoder().encodeToString(textEncryptor.encrypt(msg).bytes)
+    }
+
+    /**
+     * decode and decrypt message containing principal information using shared secret
+     * @param msg64 base64 encoded encrzpted message
+     * @return decrypted message
+     */
+    public String decryptPrincipal(String msg64) {
+        def eprip = new String(Base64.getDecoder().decode(msg64), 'UTF-8')
+        return textEncryptor.decrypt(eprip)
+    }
+
+    @Transactional
+    private String storeCredentials(String username, Object... authorities) {
+        StringBuffer sb = new StringBuffer(username)
+        authorities.each {
+            sb.append(',')
+                    .append { it instanceof GrantedAuthority ? it.authority : it.toString() }
+        }
+        def tokenCredentials = encryptPrincipal(sb.toString())
+        def domainuser = userRepository.findByUsername(username)
+        Token token = new Token(user: domainuser,
+                key: tokenCredentials,
+                generated: new Date(System.currentTimeMillis()))
+        tokenRepository.saveAndFlush(token)
+        return tokenCredentials
     }
 
     /**
@@ -69,19 +118,27 @@ class TokenAuthenticationService {
      * @return authetication information
      */
     Authentication getAuthentication(HttpServletRequest request) {
-        String token = request.getHeader(HEADER_STRING);
-        if (token != null) {
-            // parse the token.
-            def body = Jwts.parser()
-                    .setSigningKey(SECRET)
-                    .parseClaimsJws(token.replace(TOKEN_PREFIX, ""))
-                    .getBody()
-            def user = body.getSubject();
-            log.info("User: $user, Body: $body")
-//TODO securely identify user from JWT
-            return user != null ?
-                    (new UsernamePasswordAuthenticationToken(user, null, emptyList())) :
-                    null;
+        String jwsToken = request.getHeader(HEADER_STRING);
+        if (jwsToken != null) {
+            // parse the jwsToken.
+            try {
+                def body = Jwts.parser()
+                        .setSigningKey(SECRET)
+                        .parseClaimsJws(jwsToken.replace(TOKEN_PREFIX, ""))
+                        .getBody()
+                def user = body.getSubject();
+                def credentials = body.get('credentials', String.class)
+                log.info("User: $user, Body: $body")
+                log.info("Credentials: $credentials")
+                if (credentials) {
+                    def authToken = tokenRepository.findByKey(credentials)
+                    if (authToken) {
+                        return new TokenAuthentication(token: authToken)
+                    }
+                }
+            } catch (Exception ex) {
+                return null
+            }
         }
         return null;
     }

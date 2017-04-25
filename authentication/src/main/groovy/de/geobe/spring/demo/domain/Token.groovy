@@ -2,6 +2,7 @@ package de.geobe.spring.demo.domain
 
 import javax.persistence.Column
 import javax.persistence.Entity
+import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
@@ -21,9 +22,10 @@ class Token {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id
+    @Column(length = 1024)
     private String key
-    private Long validUntil
-    @ManyToOne
+    private Date generated
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = 'user_id', nullable = false)
     private User user
 }

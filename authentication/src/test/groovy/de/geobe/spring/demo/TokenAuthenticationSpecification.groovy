@@ -27,11 +27,9 @@ class TokenAuthenticationSpecification extends Specification {
     @Value('${geobe.jwt.secret}')
     final String SECRET
     final String TESTTOKEN = 'eyJhbGciOiJIUzI1NiJ9' +
-            '.eyJwcmluY2lwYWwiOiJhZG1pbiIsImF1dGhvcml0aWVzIj' +
-            'pbXSwiY3JlZGVudGlhbHMiOiJSWElwc3h3bkVWYmtKRFgzT' +
-            'lNZSFQrMjBuZkZYcEVGalArc3lNakl3c3BrPSIsInN1YiI6' +
-            'ImFkbWluIiwiZXhwIjoxNDkzMzQ5Njk4fQ' +
-            '.0kUw4kqd6bp97XSpdPFCzeQKGzzQ2tksgOGWwfylm38'
+            '.eyJwcmluY2lwYWwiOiJhZG1pbiIsImF1dGhvcml0aWVzIjpbXSwiY3JlZGVudGlhbHMiOiIvUFNrZnRTSTM5' +
+            'YTFDUktXWk14anRIcFhpWW05TkV2RnNpL2dyZlREZjFZPSIsInN1YiI6ImFkbWluIiwiZXhwIjoxNDkzMzk5N' +
+            'TQ5fQ.-HW06cOzcvKSrrFlBzfQklrhEZ4S3f8l1KKjBSd7Vos'
 //    static final String TOKEN_PREFIX = "Bearer";
 //    static final String HEADER_STRING = "Authorization";
 
@@ -70,7 +68,7 @@ class TokenAuthenticationSpecification extends Specification {
         sub == 'admin'
     }
 
-//    @Ignore
+    @Ignore
     def 'Webtoken should be successfully decoded'() {
         setup: 'I need a HttpServletRequest'
         HttpServletRequest req = new MockHttpServletRequest()
@@ -78,7 +76,24 @@ class TokenAuthenticationSpecification extends Specification {
                 TokenAuthenticationService.TOKEN_PREFIX + " " + TESTTOKEN)
         when: 'I get authentication from the request'
         def auth = tokenAuthenticationService.getAuthentication(req)
+        log.info("Authentication: $auth")
+        log.info("Authorities: ${auth?.authorities}")
         then: 'I should get authentication data'
-        auth.principal == 'admin'
+        auth?.principal.toString() == 'admin'
+        auth?.authenticated
+        auth?.authorities.collect {it.authority}.containsAll(['ROLE_default', 'ROLE_admin', 'ROLE_user'])
+    }
+
+    @Ignore
+    def 'Principal should be successfully encoded and decoded' () {
+        setup: 'I create a mock of a principal string'
+        def prip = 'meister,ROLE_master,ROLE_knister'
+        when: 'I encode this and decode it afterwards'
+        def eprip = tokenAuthenticationService.encryptPrincipal(prip)
+        def dprip = tokenAuthenticationService.decryptPrincipal(eprip)
+        log.info("encoded: $eprip")
+        log.info("decoded: $dprip")
+        then: 'they should be equal'
+        dprip == prip
     }
 }

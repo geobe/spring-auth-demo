@@ -3,6 +3,7 @@ package de.geobe.spring.demo.security
 import de.geobe.spring.demo.filter.JWTAuthenticationFilter
 import de.geobe.spring.demo.filter.JWTLoginFilter
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -10,9 +11,12 @@ import org.springframework.security.authentication.ProviderManager
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.encrypt.Encryptors
+import org.springframework.security.crypto.encrypt.TextEncryptor
 import org.springframework.security.provisioning.UserDetailsManager
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
@@ -23,6 +27,7 @@ import java.security.SecureRandom
  */
 @Configuration
 @EnableGlobalAuthentication
+@EnableWebSecurity(debug=false)
 public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     @Autowired
     private UserDetailsManager userDetailsManager;
@@ -31,6 +36,12 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         SecureRandom random = new SecureRandom();
         return new BCryptPasswordEncoder(12, random);
+    }
+
+    @Bean
+    @Autowired
+    public TextEncryptor textEncryptor(@Value('${geobe.jwt.sharedkey}') String pw, @Value('${geobe.jwt.sharedsalt}') String salt) {
+        return Encryptors.delux(pw, salt)
     }
 
     @Autowired
@@ -47,7 +58,8 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable().authorizeRequests()
-                .antMatchers("/info").authenticated()
+        .antMatchers('/r*').permitAll()
+                .antMatchers("/info").permitAll()
                 .antMatchers(HttpMethod.POST, "/login").permitAll()
                 .anyRequest().authenticated()
                 .and()

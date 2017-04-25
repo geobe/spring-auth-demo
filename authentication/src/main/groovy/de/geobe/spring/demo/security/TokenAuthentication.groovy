@@ -17,10 +17,6 @@ class TokenAuthentication implements Authentication {
 
     private Token token
 
-    TokenAuthentication(Token t) {
-        token = t
-    }
-
     @Override
     Collection<? extends GrantedAuthority> getAuthorities() {
         List<SimpleGrantedAuthority> auths = new LinkedList<>()
@@ -47,7 +43,7 @@ class TokenAuthentication implements Authentication {
 
     @Override
     boolean isAuthenticated() {
-        return token && token.validUntil > System.currentTimeMillis()
+        return token?.user != null
     }
 
     @Override

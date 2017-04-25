@@ -19,7 +19,7 @@ public class User {
     private String email
     private String password
     private boolean enabled
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "rel_user_role", joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
