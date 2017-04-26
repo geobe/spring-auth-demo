@@ -1,35 +1,30 @@
 package de.geobe.spring.demo.security
 
-import de.geobe.spring.demo.domain.Token
-import de.geobe.spring.demo.domain.User
-import de.geobe.spring.demo.repository.TokenRepository
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-
-import javax.naming.OperationNotSupportedException
 
 /**
  * Created by georg beier on 19.04.2017.
  */
 class TokenAuthentication implements Authentication {
 
-    private Token token
+    String username
+    List<SimpleGrantedAuthority> authorities
+    Object credentials
 
-    @Override
-    Collection<? extends GrantedAuthority> getAuthorities() {
-        List<SimpleGrantedAuthority> auths = new LinkedList<>()
-        token?.user.roles.each { role ->
-            auths.add(new SimpleGrantedAuthority(role.name))
-        }
-        return auths
-    }
+//    @Override
+//    Collection<? extends GrantedAuthority> getAuthorities() {
+//        List<SimpleGrantedAuthority> auths = new LinkedList<>()
+//        token?.user.roles.each { role ->
+//            auths.add(new SimpleGrantedAuthority(role.username))
+//        }
+//        return auths
+//    }
 
-    @Override
-    Object getCredentials() {
-        return token?.key
-    }
+//    @Override
+//    Object getCredentials() {
+//        return token?.key
+//    }
 
     @Override
     Object getDetails() {
@@ -38,12 +33,12 @@ class TokenAuthentication implements Authentication {
 
     @Override
     Object getPrincipal() {
-        return token?.user
+        return username
     }
 
     @Override
     boolean isAuthenticated() {
-        return token?.user != null
+        return credentials != null
     }
 
     @Override
@@ -53,6 +48,6 @@ class TokenAuthentication implements Authentication {
 
     @Override
     String getName() {
-        return token?.user.username
+        return username
     }
 }

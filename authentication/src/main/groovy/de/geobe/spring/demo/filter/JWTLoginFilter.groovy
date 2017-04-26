@@ -36,7 +36,8 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
     TokenAuthenticationService tokenAuthenticationService
 
     public JWTLoginFilter(String url, AuthenticationManager authManager) {
-        super(new AntPathRequestMatcher(url))
+        super(url)
+//        super(new AntPathRequestMatcher(url))
         setAuthenticationManager(authManager)
     }
 
@@ -48,7 +49,7 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
             WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
             tokenAuthenticationService =
                     webApplicationContext.getBean(TokenAuthenticationService.class);
-            log.info("tokenAuthenticationService loaded")
+//            log.info("tokenAuthenticationService loaded")
         }
         super.doFilter(req, res, chain)
     }
@@ -68,6 +69,7 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
                             Collections.emptyList()
                     )
             )
+            log.info("Authentication: $authentication")
             return authentication
         } catch (Exception ex) {
             response.setStatus(HttpStatus.NOT_ACCEPTABLE.value())

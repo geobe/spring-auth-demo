@@ -18,6 +18,6 @@ class TokenAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     boolean supports(Class<?> authentication) {
-        return TokenAuthentication.class
+        return TokenAuthentication.class == authentication
     }
 }

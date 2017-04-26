@@ -10,8 +10,10 @@ import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.impl.crypto.MacSigner
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.crypto.encrypt.TextEncryptor
@@ -53,28 +55,29 @@ class TokenAuthenticationService {
 
     /**
      * adds authentication information to a response header and stores authentication key
-     * in the database.
+     * in the database. Plain text information on principal and authorities is for client use
+     * only. The authentication service only uses the encrypted credentials.
      * @param response response to be decorated
      * @param username authentication information
      */
     void addAuthentication(HttpServletResponse response,
                            UsernamePasswordAuthenticationToken authentication) {
-        String uname
-        if (authentication.principal instanceof User) {
-            uname = ((User) authentication.principal).username
-        } else {
-            uname = authentication.principal.toString()
+        if (!(authentication.principal instanceof User)) {
+            return
         }
+        String uname = ((User) authentication.principal).username
+        def authorities = ((User) authentication.principal).authorities.collect {it.authority}
+        def credentials = storeCredentials(uname, authorities.toArray(new String[0]))
         String JWT = Jwts.builder()
                 .setClaims([principal  : uname,
-                            authorities: authentication.authorities,
-                            credentials: storeCredentials(uname, authentication.authorities)])
+                            authorities: authorities,
+                            credentials: credentials])
                 .setSubject(uname)
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
                 .signWith(SignatureAlgorithm.forName(ALGORITHM), SECRET)
                 .compact();
         response.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + JWT);
-        log.info("addAuthentication done")
+        log.info("addAuthentication done, credentials: $credentials")
     }
 
     /**
@@ -82,7 +85,7 @@ class TokenAuthenticationService {
      * @param msg plain message
      * @return base64 encoded encrypted message
      */
-    public String encryptPrincipal(String msg) {
+    private String encryptPrincipal(String msg) {
         return Base64.getEncoder().encodeToString(textEncryptor.encrypt(msg).bytes)
     }
 
@@ -91,17 +94,16 @@ class TokenAuthenticationService {
      * @param msg64 base64 encoded encrzpted message
      * @return decrypted message
      */
-    public String decryptPrincipal(String msg64) {
+    private String decryptCredentials(String msg64) {
         def eprip = new String(Base64.getDecoder().decode(msg64), 'UTF-8')
         return textEncryptor.decrypt(eprip)
     }
 
     @Transactional
-    private String storeCredentials(String username, Object... authorities) {
+    private String storeCredentials(String username, String... authorities) {
         StringBuffer sb = new StringBuffer(username)
-        authorities.each {
-            sb.append(',')
-                    .append { it instanceof GrantedAuthority ? it.authority : it.toString() }
+        authorities.each { aut ->
+            sb.append(',').append(aut)
         }
         def tokenCredentials = encryptPrincipal(sb.toString())
         def domainuser = userRepository.findByUsername(username)
@@ -128,16 +130,26 @@ class TokenAuthenticationService {
                         .getBody()
                 def user = body.getSubject();
                 def credentials = body.get('credentials', String.class)
-                log.info("User: $user, Body: $body")
+//                log.info("User: $user, Body: $body")
                 log.info("Credentials: $credentials")
                 if (credentials) {
-                    def authToken = tokenRepository.findByKey(credentials)
-                    if (authToken) {
-                        return new TokenAuthentication(token: authToken)
+                    def decryptedCredentials = decryptCredentials(credentials)
+                    log.info("decrypted credentials: $decryptedCredentials")
+//                    def authToken = tokenRepository.findByKey(credentials)
+                    if (tokenRepository.keyExists(credentials)) {
+                        log.info("token found")
+                        def credinfo = decryptedCredentials.split(/,/)
+                        def auths = credinfo[1..-1]
+                        log.info("authorities: $auths")
+                        return new TokenAuthentication(
+                                username: credinfo[0],
+                                credentials: credentials,
+                                authorities: auths)
                     }
+                    log.info("invalid token")
                 }
             } catch (Exception ex) {
-                return null
+                log.info("invalid token caused exception: $ex")
             }
         }
         return null;

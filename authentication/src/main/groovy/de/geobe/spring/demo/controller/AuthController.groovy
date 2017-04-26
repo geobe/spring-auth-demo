@@ -3,6 +3,7 @@ package de.geobe.spring.demo.controller
 import de.geobe.spring.demo.filter.AccountCredentials
 import groovy.util.logging.Slf4j
 import org.eclipse.jetty.http.HttpMethod
+import org.springframework.security.access.annotation.Secured
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
@@ -28,9 +29,10 @@ class AuthController {
 
     @RequestMapping("/rogin")
     @ResponseBody
-    String login(@RequestBody AccountCredentials cr) {
+    String login(@RequestBody String cr) {
         log.info("login called with $cr")
-        return "logged in now as ${cr.username} with ${cr.password}"
+        return [user: 'schummel',
+                password: cr]
     }
 
 }
