@@ -59,13 +59,14 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
             builder.roles("ADMIN", "USER", "DEFAULT");
             userDetailsManager.createUser(builder.build());
         }
-        tokenRepository.deleteAll()
+//        tokenRepository.deleteAll()
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable().authorizeRequests()
-                .antMatchers('/r**').authenticated()
+                .antMatchers('/r**').hasAnyRole('ADMIN')
+                .antMatchers('/admin/**').hasAnyRole('ADMIN')
                 .antMatchers("/info").permitAll()
                 .antMatchers(HttpMethod.POST, "/login").permitAll()
                 .anyRequest().authenticated()

@@ -12,20 +12,6 @@ class TokenAuthentication implements Authentication {
     List<SimpleGrantedAuthority> authorities
     Object credentials
 
-//    @Override
-//    Collection<? extends GrantedAuthority> getAuthorities() {
-//        List<SimpleGrantedAuthority> auths = new LinkedList<>()
-//        token?.user.roles.each { role ->
-//            auths.add(new SimpleGrantedAuthority(role.username))
-//        }
-//        return auths
-//    }
-
-//    @Override
-//    Object getCredentials() {
-//        return token?.key
-//    }
-
     @Override
     Object getDetails() {
         return null

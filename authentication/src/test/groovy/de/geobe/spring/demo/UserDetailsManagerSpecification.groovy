@@ -2,7 +2,7 @@ package de.geobe.spring.demo
 
 import de.geobe.spring.demo.repository.RoleRepository
 import de.geobe.spring.demo.repository.UserRepository
-import de.geobe.spring.demo.service.UserDetailsManagerImpl
+import de.geobe.spring.demo.service.TokenUserDetailsManager
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -19,7 +19,7 @@ import spock.lang.Specification
 class UserDetailsManagerSpecification extends Specification {
 
     @Autowired
-    UserDetailsManagerImpl userDetailsManager
+    TokenUserDetailsManager userDetailsManager
     @Autowired
     WebApplicationContext context
     @Autowired

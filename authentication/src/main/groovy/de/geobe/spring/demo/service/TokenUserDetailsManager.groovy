@@ -19,7 +19,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException
  * Created by georg beier on 17.04.2017.
  */
 @Service
-class UserDetailsManagerImpl implements UserDetailsManager {
+class TokenUserDetailsManager implements UserDetailsManager {
     @Autowired
     private UserRepository userRepository
     @Autowired

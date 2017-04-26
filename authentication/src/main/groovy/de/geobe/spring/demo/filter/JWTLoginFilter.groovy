@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletResponse
  * @see <a href="https://auth0.com/blog/securing-spring-boot-with-jwts/>
  * "Securing Spring Boot with JWTs" </a>
  */
-@Slf4j
+//@Slf4j
 class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
     TokenAuthenticationService tokenAuthenticationService
@@ -46,10 +46,10 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
             throws IOException, ServletException {
         if(tokenAuthenticationService==null){
             ServletContext servletContext = req.getServletContext();
-            WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
+            WebApplicationContext webApplicationContext =
+                    WebApplicationContextUtils.getWebApplicationContext(servletContext);
             tokenAuthenticationService =
                     webApplicationContext.getBean(TokenAuthenticationService.class);
-//            log.info("tokenAuthenticationService loaded")
         }
         super.doFilter(req, res, chain)
     }
@@ -61,7 +61,6 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
         try {
             AccountCredentials creds = new ObjectMapper()
                     .readValue(request.getInputStream(), AccountCredentials.class);
-            log.info("Credentials: $creds")
             def authentication = getAuthenticationManager().authenticate(
                     new UsernamePasswordAuthenticationToken(
                             creds.username,
@@ -69,7 +68,6 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
                             Collections.emptyList()
                     )
             )
-            log.info("Authentication: $authentication")
             return authentication
         } catch (Exception ex) {
             response.setStatus(HttpStatus.NOT_ACCEPTABLE.value())

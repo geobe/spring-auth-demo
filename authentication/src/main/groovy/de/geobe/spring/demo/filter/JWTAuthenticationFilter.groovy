@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletResponse
 /**
  * Created by georg beier on 19.04.2017.
  */
-@Slf4j
+//@Slf4j
 public class JWTAuthenticationFilter extends GenericFilterBean {
 //    @Autowired
     TokenAuthenticationService tokenAuthenticationService
@@ -39,7 +39,6 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
                          ServletResponse response,
                          FilterChain filterChain)
             throws IOException, ServletException {
-            log.info("JWTAuthenticationFilter executing")
         if(tokenAuthenticationService==null) {
             ServletContext servletContext = request.getServletContext();
             WebApplicationContext webApplicationContext = WebApplicationContextUtils.

@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.crypto.encrypt.TextEncryptor
 import org.springframework.stereotype.Service
@@ -30,7 +31,7 @@ import javax.servlet.http.HttpServletResponse
  * "Securing Spring Boot with JWTs" </a> and using
  * @see <a href="https://github.com/jwtk/jjwt">io.jsonwebtoken library</a>.
  */
-@Slf4j
+//@Slf4j
 @Service
 class TokenAuthenticationService {
     @Value('${geobe.jwt.expiration}')
@@ -77,7 +78,6 @@ class TokenAuthenticationService {
                 .signWith(SignatureAlgorithm.forName(ALGORITHM), SECRET)
                 .compact();
         response.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + JWT);
-        log.info("addAuthentication done, credentials: $credentials")
     }
 
     /**
@@ -130,17 +130,11 @@ class TokenAuthenticationService {
                         .getBody()
                 def user = body.getSubject();
                 def credentials = body.get('credentials', String.class)
-//                log.info("User: $user, Body: $body")
-                log.info("Credentials: $credentials")
                 if (credentials) {
                     def decryptedCredentials = decryptCredentials(credentials)
-                    log.info("decrypted credentials: $decryptedCredentials")
-//                    def authToken = tokenRepository.findByKey(credentials)
                     if (tokenRepository.keyExists(credentials)) {
-                        log.info("token found")
                         def credinfo = decryptedCredentials.split(/,/)
-                        def auths = credinfo[1..-1]
-                        log.info("authorities: $auths")
+                        def auths = credinfo[1..-1].collect {new SimpleGrantedAuthority(it)}
                         return new TokenAuthentication(
                                 username: credinfo[0],
                                 credentials: credentials,
