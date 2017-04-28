@@ -3,6 +3,7 @@ package de.geobe.spring.demo.security
 import de.geobe.spring.demo.filter.JWTAuthenticationFilter
 import de.geobe.spring.demo.filter.JWTLoginFilter
 import de.geobe.spring.demo.repository.TokenRepository
+import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -20,14 +21,12 @@ import org.springframework.security.crypto.encrypt.Encryptors
 import org.springframework.security.crypto.encrypt.TextEncryptor
 import org.springframework.security.provisioning.UserDetailsManager
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher
-import org.springframework.security.web.util.matcher.RegexRequestMatcher
 
 import java.security.SecureRandom
-
 /**
  * Created by georg beier on 17.04.2017.
  */
+@Slf4j
 @Configuration
 @EnableGlobalAuthentication
 @EnableWebSecurity(debug = false)
@@ -36,12 +35,8 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     private UserDetailsManager userDetailsManager;
     @Autowired
     private TokenRepository tokenRepository
-
-    @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-        SecureRandom random = new SecureRandom();
-        return new BCryptPasswordEncoder(12, random);
-    }
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder
 
     @Bean
     @Autowired
@@ -52,8 +47,9 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsManager).passwordEncoder(bCryptPasswordEncoder());
+        auth.userDetailsService(userDetailsManager).passwordEncoder(passwordEncoder);
         if (!userDetailsManager.userExists("admin")) {
+            log.info("creating manager")
             User.UserBuilder builder = User.withUsername("admin");
             builder.password("admin");
             builder.roles("ADMIN", "USER", "DEFAULT");
