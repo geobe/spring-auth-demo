@@ -1,7 +1,9 @@
 package de.geobe.spring.demo.controller
 
+import de.geobe.spring.demo.service.TokenService
 import de.geobe.spring.demo.service.TokenUserDetailsManager
 import groovy.util.logging.Slf4j
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.userdetails.User
@@ -19,6 +21,8 @@ class AdminController {
 
     @Autowired
     TokenUserDetailsManager userDetailsManager
+    @Autowired
+    TokenService tokenService
 
     @RequestMapping(path = '/user', method = RequestMethod.POST)
     @ResponseBody
@@ -36,6 +40,49 @@ class AdminController {
             response.setStatus(HttpStatus.CONFLICT.value())
             return "Creation of ${ui.user} failed"
         }
+    }
+
+    @RequestMapping(path = '/jwts/createuser', method = RequestMethod.POST)
+    @ResponseBody
+    public String createFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+        Map<String, Object> content = tokenService.getTokenContent(headers)
+        User.UserBuilder builder = User.withUsername(content.user);
+        builder.password(content.password);
+        builder.roles(content.roles as String[]);
+        try {
+            userDetailsManager.createUser(builder.build())
+            response.setStatus(HttpStatus.CREATED.value())
+            return 'created'
+        } catch (Exception ex) {
+            response.setStatus(HttpStatus.CONFLICT.value())
+            return "Creation of ${content.user} failed"
+        }
+    }
+
+    @RequestMapping(path = '/jwts/updateuser', method = RequestMethod.POST)
+    @ResponseBody
+    public String updateFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+        Map<String, Object> content = tokenService.getTokenContent(headers)
+        User.UserBuilder builder = User.withUsername(content.user);
+        builder.password(content.password);
+        builder.roles(content.roles as String[]);
+        try {
+            userDetailsManager.updateUser(builder.build())
+            response.setStatus(HttpStatus.CREATED.value())
+            return 'created'
+        } catch (Exception ex) {
+            response.setStatus(HttpStatus.CONFLICT.value())
+            return "Creation of ${content.user} failed"
+        }
+    }
+
+    @RequestMapping(path = '/jwts/deleteuser', method = RequestMethod.POST)
+    @ResponseBody
+    public String deleteFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+        Map<String, Object> content = tokenService.getTokenContent(headers)
+        userDetailsManager.deleteUser(content.user)
+        response.setStatus(HttpStatus.OK.value())
+        return "${content.user} deleted"
     }
 }
 

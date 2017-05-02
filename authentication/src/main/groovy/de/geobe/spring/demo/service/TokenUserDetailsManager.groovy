@@ -3,6 +3,7 @@ package de.geobe.spring.demo.service
 import de.geobe.spring.demo.domain.Role
 import de.geobe.spring.demo.domain.User
 import de.geobe.spring.demo.repository.RoleRepository
+import de.geobe.spring.demo.repository.TokenRepository
 import de.geobe.spring.demo.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.GrantedAuthority
@@ -13,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.provisioning.UserDetailsManager
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+
 /**
  * Created by georg beier on 17.04.2017.
  */
@@ -22,6 +24,8 @@ class TokenUserDetailsManager implements UserDetailsManager {
     private UserRepository userRepository
     @Autowired
     private RoleRepository roleRepository
+    @Autowired
+    TokenRepository tokenRepository
     @Autowired
     private BCryptPasswordEncoder pwEncoder;
 
@@ -79,7 +83,15 @@ class TokenUserDetailsManager implements UserDetailsManager {
     @Transactional
     void deleteUser(String username) {
         User u = userRepository.findByUsername(username)
-        if (u) userRepository.delete(u)
+        if (u) {
+            def roles = []
+            roles.addAll(u.roles)
+            roles.each { role ->
+                u.removeRole(role)
+            }
+            tokenRepository.deleteByUser(u)
+            userRepository.delete(u)
+        }
     }
 
     @Override
