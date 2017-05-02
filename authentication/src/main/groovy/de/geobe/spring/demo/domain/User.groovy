@@ -16,7 +16,6 @@ public class User {
     private Long id
     @Column(unique = true, nullable = false)
     private String username
-    private String email
     private String password
     private boolean enabled
     @ManyToMany(fetch = FetchType.EAGER)

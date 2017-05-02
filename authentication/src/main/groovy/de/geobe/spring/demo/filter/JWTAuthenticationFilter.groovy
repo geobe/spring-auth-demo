@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletResponse
 /**
  * Created by georg beier on 19.04.2017.
  */
-//@Slf4j
+@Slf4j
 public class JWTAuthenticationFilter extends GenericFilterBean {
 //    @Autowired
     TokenAuthenticationService tokenAuthenticationService

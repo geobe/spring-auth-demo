@@ -61,9 +61,9 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable().authorizeRequests()
+                .antMatchers("/info").permitAll()
                 .antMatchers('/r**').hasAnyRole('ADMIN')
                 .antMatchers('/admin/**').hasAnyRole('ADMIN')
-                .antMatchers("/info").permitAll()
                 .antMatchers(HttpMethod.POST, "/login").permitAll()
                 .anyRequest().authenticated()
                 .and()
@@ -73,6 +73,7 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
         // And filter other requests to check the presence of JWT in header
                 .addFilterBefore(new JWTAuthenticationFilter(),
                     UsernamePasswordAuthenticationFilter.class);
+//        http.anonymous().disable()
         def autman = authenticationManager()
         if (autman instanceof ProviderManager) {
             ProviderManager pm = (ProviderManager) autman;

@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletResponse
  * "Securing Spring Boot with JWTs" </a> and using
  * @see <a href="https://github.com/jwtk/jjwt">io.jsonwebtoken library</a>.
  */
-//@Slf4j
+@Slf4j
 @Service
 class TokenAuthenticationService {
     @Value('${geobe.jwt.expiration}')
@@ -120,7 +120,7 @@ class TokenAuthenticationService {
      * @return authetication information
      */
     Authentication getAuthentication(HttpServletRequest request) {
-        String jwsToken = request.getHeader(HEADER_STRING);
+        String jwsToken = request.getHeader(HEADER_STRING)
         if (jwsToken != null) {
             // parse the jwsToken.
             try {
@@ -140,12 +140,13 @@ class TokenAuthenticationService {
                                 credentials: credentials,
                                 authorities: auths)
                     }
-                    log.info("invalid token")
+                    log.info("invalid token: $jwsToken")
                 }
             } catch (Exception ex) {
                 log.info("invalid token caused exception: $ex")
             }
         }
+        log.info("no token in request: ${request.headerNames}")
         return null;
     }
 }

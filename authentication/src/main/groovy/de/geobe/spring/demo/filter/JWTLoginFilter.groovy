@@ -3,12 +3,14 @@ package de.geobe.spring.demo.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.geobe.spring.demo.service.TokenAuthenticationService
 import groovy.util.logging.Slf4j
+import io.jsonwebtoken.Jwts
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
@@ -30,7 +32,7 @@ import javax.servlet.http.HttpServletResponse
  * @see <a href="https://auth0.com/blog/securing-spring-boot-with-jwts/>
  * "Securing Spring Boot with JWTs" </a>
  */
-//@Slf4j
+@Slf4j
 class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
     TokenAuthenticationService tokenAuthenticationService
@@ -58,18 +60,33 @@ class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
     public Authentication attemptAuthentication(
             HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException, IOException, ServletException {
+        String jwsToken = request.getHeader(TokenAuthenticationService.HEADER_STRING)
+        String user, password
         try {
-            AccountCredentials creds = new ObjectMapper()
-                    .readValue(request.getInputStream(), AccountCredentials.class);
-            def authentication = getAuthenticationManager().authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            creds.username,
-                            creds.password,
-                            Collections.emptyList()
-                    )
-            )
-            return authentication
+            if (jwsToken) {
+                def body = Jwts.parser()
+                        .setSigningKey(tokenAuthenticationService.SECRET)
+                        .parseClaimsJws(
+                        jwsToken.replace(TokenAuthenticationService.TOKEN_PREFIX, ""))
+                        .getBody()
+                user = body.getSubject();
+                password = body.get('password', String.class)
+            } else {
+                AccountCredentials creds = new ObjectMapper()
+                        .readValue(request.getInputStream(), AccountCredentials.class);
+                user = creds.username
+                password = creds.password
+            }
+                def authentication = getAuthenticationManager().authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                password,
+                                Collections.emptyList()
+                        )
+                )
+                return authentication
         } catch (Exception ex) {
+            log.info("Login Exception $ex")
             response.setStatus(HttpStatus.NOT_ACCEPTABLE.value())
         }
     }

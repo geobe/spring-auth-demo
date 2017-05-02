@@ -55,7 +55,7 @@ class UserDetailsManagerSpecification extends Specification {
         u.username == 'testuser2'
         r != null
         r.name.endsWith 'tester'
-        roleRepository.count() == 4
+        roleRepository.findByNameLike('%tester')
 //        cleanup:
 //        if (u) userRepository.delete(u)
 //        if (r) roleRepository.delete(r)

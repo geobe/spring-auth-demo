@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.userdetails.User
 import spock.lang.Ignore
 import spock.lang.Specification
 
@@ -45,12 +46,15 @@ class TokenAuthenticationSpecification extends Specification {
     def 'WebToken should be added to response header'() {
         setup: 'we need a response to add a header'
         HttpServletResponse rsp = new MockHttpServletResponse()
+        User.UserBuilder builder = User.withUsername("admin");
+        builder.password("not tested here");
+        builder.roles("ADMIN", "USER", "DEFAULT");
+        def principal = builder.build()
         def admin = new UsernamePasswordAuthenticationToken(
-                'admin',
-                'admin',
+                principal,
+                'not tested here',
                 Collections.emptyList()
         )
-
         when: 'I add authentication to rsp header'
         tokenAuthenticationService.addAuthentication(rsp, admin)
         def token = rsp.getHeader(TokenAuthenticationService.HEADER_STRING)
@@ -63,7 +67,7 @@ class TokenAuthenticationSpecification extends Specification {
         log.info("claims: $claims")
         log.info("body: $body")
         log.info("subject: $sub")
-        then:
+        then: 'we get a well formed signed jwts token'
         token.startsWith(TokenAuthenticationService.TOKEN_PREFIX)
         sub == 'admin'
     }
@@ -90,7 +94,7 @@ class TokenAuthenticationSpecification extends Specification {
         def prip = 'meister,ROLE_master,ROLE_knister'
         when: 'I encode this and decode it afterwards'
         def eprip = tokenAuthenticationService.encryptPrincipal(prip)
-        def dprip = tokenAuthenticationService.decryptPrincipal(eprip)
+        def dprip = tokenAuthenticationService.decryptCredentials(eprip)
         log.info("encoded: $eprip")
         log.info("decoded: $dprip")
         then: 'they should be equal'

@@ -1,0 +1,48 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.3.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'groovy'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+ext['spock.version'] = '1.1'
+
+repositories {
+	mavenCentral()
+}
+
+
+dependencies {
+	compile('org.springframework.boot:spring-boot-starter-security')
+	compile('org.springframework.boot:spring-boot-starter-web') {
+		exclude module: "spring-boot-starter-tomcat"
+	}
+	compile("org.springframework.boot:spring-boot-starter-jetty")
+	compile('org.codehaus.groovy:groovy-all')
+	compile 'io.jsonwebtoken:jjwt:0.7.0'
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+	testCompile ("org.spockframework:spock-core:1.1-groovy-2.4-rc-4")
+	testCompile('org.spockframework:spock-spring:1.1-groovy-2.4-rc-4')
+}
+sourceSets {
+	main {
+		java { srcDirs = [] }
+		groovy { srcDirs = ['src/main/groovy', 'src/main/java'] }
+	}
+	test {
+		groovy {
+			srcDirs = ['src/main/groovy', 'src/main/java', 'src/test/groovy', 'src/test/java']
+		}
+	}
+}
