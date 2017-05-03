@@ -16,4 +16,5 @@ interface TokenRepository extends JpaRepository<Token, Long> {
     @Query(value = 'select exists(select 1 from tbl_token t where t.key =:key) as x', nativeQuery = true)
     boolean keyExists(@Param(value = 'key') String key)
     void deleteByUser(User user)
+    void deleteByKey(String key)
 }

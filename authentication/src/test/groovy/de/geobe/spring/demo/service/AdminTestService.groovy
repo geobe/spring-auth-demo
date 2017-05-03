@@ -57,7 +57,7 @@ class AdminTestService {
         def authToken = jwtsLogin('admin', 'admin')
         def credentials = tokenService.parseToken(authToken)?.get('credentials')
         if (credentials) {
-            RestTemplate template = tokenService.makeTemplate()
+            RestTemplate template = tokenService.makeTemplate(200, 201)
             def uri = new URI(url)
             def claims = [user       : uname,
                           password   : pw,
@@ -67,6 +67,20 @@ class AdminTestService {
             def entity = tokenService.postForEntity(template, uri, token)
             return entity
         }
+    }
+
+    def changePassword(String credentials,
+                       String oldpassword,
+                       String newpassword,
+                       String url = 'http://localhost:8070/admin/jwts/changepassword') {
+        RestTemplate template = tokenService.makeTemplate(200, 403)
+        def uri = new URI(url)
+        def claims = [oldpassword: oldpassword,
+                      newpassword: newpassword,
+                      credentials: credentials]
+        String token = tokenService.makeToken(claims, tokenService.currentUser)
+        def entity = tokenService.postForEntity(template, uri, token)
+        return entity?.statusCode == HttpStatus.OK
     }
 
     def deleteUser(String uname,

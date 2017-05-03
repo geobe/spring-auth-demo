@@ -78,6 +78,7 @@ class AuthenticationControllerSpecification extends Specification {
 
     }
 
+    @Ignore
     def 'should be able to create a new user'() {
         when: 'I create a new user using jwts'
         def name = 'Humpert' + System.currentTimeMillis()
@@ -99,6 +100,7 @@ class AuthenticationControllerSpecification extends Specification {
 //        authname == name
     }
 
+    @Ignore
     def 'should be able to modify a user'() {
         when: 'I create a new user using jwts'
         def name = 'Humpert' + System.currentTimeMillis()
@@ -114,11 +116,12 @@ class AuthenticationControllerSpecification extends Specification {
         log.info("Authenticated: $auth")
         def u = userRepository.findByUsername(name)
         then: 'user should be authenticated and existing in database'
-//        auth
-        u.roles.collect {it.authority}.contains('CHEF')
-        !u.roles.collect {it.authority}.contains('HAPPY')
+        auth
+        u.roles.collect { it.authority }.contains('ROLE_CHEF')
+        !u.roles.collect { it.authority }.contains('ROLE_HAPPY')
     }
 
+    @Ignore
     def 'should be able to delete a user'() {
         when: 'I find sample users'
         def humperts = userRepository.findByUsernameLike('Humpert%')
@@ -131,5 +134,29 @@ class AuthenticationControllerSpecification extends Specification {
         then: 'operation succeeds'
         reply =~ '200'
         !userRepository.findByUsernameLike('Humpert%')
+    }
+
+    def 'should be able to change own password'() {
+        setup: 'I create a temporary user, log in and get encrypted credentials'
+        def name = 'Larry' + System.currentTimeMillis()
+        def reply = adminTestService.createUser(name, 'humpf', ['DER_LARRY'])
+        log.info("Created: $reply")
+        def authtoken = adminTestService.jwtsLogin(name, 'humpf')
+        log.info("Authenticated: $authtoken")
+        def content = tokenService.parseToken(authtoken)
+        log.info("auth content: $content")
+        def credentials = content.credentials
+        when: 'this user changes his password with correct input'
+        def changed = adminTestService.changePassword(credentials, 'humpf', 'strumpf')
+        authtoken = adminTestService.jwtsLogin(name, 'strumpf')
+        log.info("Authenticated with new password: $authtoken")
+        then: 'password is changed and login with new password is possible'
+        changed
+        authtoken
+        when: 'I try to change with wrong old password'
+        credentials = tokenService.parseToken(authtoken).credentials
+        changed = adminTestService.changePassword(credentials, 'humpf', 'strumpf')
+        then: 'change password has failed'
+        !changed
     }
 }

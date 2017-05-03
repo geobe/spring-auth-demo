@@ -68,11 +68,32 @@ class AdminController {
         builder.roles(content.roles as String[]);
         try {
             userDetailsManager.updateUser(builder.build())
-            response.setStatus(HttpStatus.CREATED.value())
-            return 'created'
+            response.setStatus(HttpStatus.OK.value())
+            return 'updated'
         } catch (Exception ex) {
             response.setStatus(HttpStatus.CONFLICT.value())
             return "Creation of ${content.user} failed"
+        }
+    }
+
+    @RequestMapping(path = '/jwts/changepassword', method = RequestMethod.POST)
+    @ResponseBody
+    public String updatedFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+        Map<String, Object> content = tokenService.getTokenContent(headers)
+        try {
+            if (userDetailsManager.changePassword(
+                    tokenService.currentUser,
+                    content.oldpassword,
+                    content.newpassword)) {
+                response.setStatus(HttpStatus.OK.value())
+                return 'password updated'
+            } else {
+                response.setStatus(HttpStatus.FORBIDDEN.value())
+                return 'password update not allowed'
+            }
+        } catch (Exception ex) {
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value())
+            return "password update exception: $ex"
         }
     }
 

@@ -83,10 +83,15 @@ class TokenService {
 
     Map<String, Object> getTokenContent(HttpHeaders headers) {
         def auth = headers.get(TokenService.HEADER_STRING)
-        def jwts = auth?.get(0).replace(TokenService.TOKEN_PREFIX, '')
+        def jwts = auth?.get(0)//.replace(TokenService.TOKEN_PREFIX, '')
         def content = parseToken(jwts)
         content
     }
+
+//    def stripPrefix(String token) {
+//        token.startsWith(TOKEN_PREFIX) ?
+//                token.replace(TOKEN_PREFIX, '') : token
+//    }
 
     def getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication()?.getPrincipal()

@@ -1,5 +1,6 @@
 package de.geobe.spring.demo.domain
 
+import groovy.util.logging.Slf4j
 import org.hibernate.annotations.Cascade
 
 /**
@@ -7,7 +8,7 @@ import org.hibernate.annotations.Cascade
  */
 import javax.persistence.*;
 import java.util.Set;
-
+@Slf4j
 @Entity
 @Table(name = "tbl_user")
 public class User {
@@ -37,10 +38,8 @@ public class User {
     }
 
     public void updateRoles(Collection<Role> newRoles) {
-        def minus =roles.minus(newRoles)
-        def plus = newRoles.minus(roles)
-        minus.each {roles.remove(it)}
-        plus.each {roles.add(it)}
+        roles.clear()
+        roles.addAll(newRoles)
     }
 
     @Override

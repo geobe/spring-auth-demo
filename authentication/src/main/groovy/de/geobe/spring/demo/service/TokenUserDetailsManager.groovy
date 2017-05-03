@@ -27,6 +27,8 @@ class TokenUserDetailsManager implements UserDetailsManager {
     @Autowired
     TokenRepository tokenRepository
     @Autowired
+    TokenService tokenService
+    @Autowired
     private BCryptPasswordEncoder pwEncoder;
 
     /**
@@ -72,7 +74,7 @@ class TokenUserDetailsManager implements UserDetailsManager {
     @Transactional
     void updateUser(UserDetails user) {
         User u = userRepository.findByUsername(user.username)
-        u.password = user.password
+        u.password = pwEncoder.encode(user.password)
         u.enabled = user.enabled
         List<Role> roles = manageRoles(user)
         u.updateRoles(roles)
@@ -96,16 +98,18 @@ class TokenUserDetailsManager implements UserDetailsManager {
 
     @Override
     void changePassword(String oldPassword, String newPassword) {
-        throw new UnsupportedOperationException("cannot change password without user details")
+        changePassword(tokenService.currentUser, oldPassword, newPassword)
     }
 
     @Transactional
-    void changePassword(UserDetails user, String oldPassword, String newPassword) {
-        User u = userRepository.findByUsername(user.username)
+    boolean changePassword(String username, String oldPassword, String newPassword) {
+        User u = userRepository.findByUsername(username)
         if (pwEncoder.matches(oldPassword, u.password)) {
             u.password = pwEncoder.encode(newPassword)
             userRepository.saveAndFlush(u)
+            return true
         }
+        return false
     }
 
     @Override

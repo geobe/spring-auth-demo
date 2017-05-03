@@ -2,7 +2,9 @@ package de.geobe.spring.demo.security
 
 import de.geobe.spring.demo.filter.JWTAuthenticationFilter
 import de.geobe.spring.demo.filter.JWTLoginFilter
+import de.geobe.spring.demo.filter.JWTLogoutSuccessHandler
 import de.geobe.spring.demo.repository.TokenRepository
+import de.geobe.spring.demo.service.TokenService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -22,7 +24,6 @@ import org.springframework.security.crypto.encrypt.TextEncryptor
 import org.springframework.security.provisioning.UserDetailsManager
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
-import java.security.SecureRandom
 /**
  * Created by georg beier on 17.04.2017.
  */
@@ -35,6 +36,8 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     private UserDetailsManager userDetailsManager;
     @Autowired
     private TokenRepository tokenRepository
+    @Autowired
+    TokenService tokenService
     @Autowired
     private BCryptPasswordEncoder passwordEncoder
 
@@ -60,19 +63,26 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        def logoutSuccessHandler = new JWTLogoutSuccessHandler(tokenRepository, tokenService)
         http.csrf().disable().authorizeRequests()
                 .antMatchers("/info").permitAll()
+                .antMatchers('/logout').authenticated()
                 .antMatchers('/r**').hasAnyRole('ADMIN')
+                .antMatchers('/admin/jwts/changepassword').fullyAuthenticated()
                 .antMatchers('/admin/**').hasAnyRole('ADMIN')
                 .antMatchers(HttpMethod.POST, "/login").permitAll()
                 .anyRequest().authenticated()
+                .and()
+                .logout()
+                .logoutSuccessHandler(logoutSuccessHandler)
+//                .addLogoutHandler(new JWTLogoutHandler())
                 .and()
         // We filter the api/login requests
                 .addFilterBefore(new JWTLoginFilter("/login", authenticationManager()),
                 UsernamePasswordAuthenticationFilter.class)
         // And filter other requests to check the presence of JWT in header
                 .addFilterBefore(new JWTAuthenticationFilter(),
-                    UsernamePasswordAuthenticationFilter.class);
+                UsernamePasswordAuthenticationFilter.class);
 //        http.anonymous().disable()
         def autman = authenticationManager()
         if (autman instanceof ProviderManager) {
