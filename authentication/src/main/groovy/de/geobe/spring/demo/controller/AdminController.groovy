@@ -78,7 +78,7 @@ class AdminController {
 
     @RequestMapping(path = '/jwts/changepassword', method = RequestMethod.POST)
     @ResponseBody
-    public String updatedFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+    public String changePasswordFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
         Map<String, Object> content = tokenService.getTokenContent(headers)
         try {
             if (userDetailsManager.changePassword(
