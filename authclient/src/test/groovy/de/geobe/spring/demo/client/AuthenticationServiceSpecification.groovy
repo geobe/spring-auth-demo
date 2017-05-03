@@ -1,11 +1,11 @@
 package de.geobe.spring.demo.client
 
 import de.geobe.spring.demo.client.service.AuthenticationService
+import de.geobe.spring.demo.service.AdminAccessService
+import de.geobe.spring.demo.service.TokenService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.util.ReflectionTestUtils
 import spock.lang.Ignore
 import spock.lang.Specification
@@ -16,17 +16,25 @@ import spock.lang.Specification
 @Slf4j
 //@SpringBootTest(classes = AuthclientApplication)
 class AuthenticationServiceSpecification extends Specification {
-    @Autowired
+//    @Autowired
     AuthenticationService authenticationService = new AuthenticationService()
+//    @Autowired
+    AdminAccessService adminAccessService = new AdminAccessService()
+    TokenService tokenService = new TokenService()
 
     def setup() {
         ReflectionTestUtils.setField(authenticationService, 'EXPIRATIONTIME', 720000000)
         ReflectionTestUtils.setField(authenticationService, 'SECRET', 'my_test_secret')
         ReflectionTestUtils.setField(authenticationService, 'ALGORITHM', 'HS256')
+
+        ReflectionTestUtils.setField(tokenService, 'EXPIRATIONTIME', 720000000)
+        ReflectionTestUtils.setField(tokenService, 'SECRET', 'my_test_secret')
+        ReflectionTestUtils.setField(tokenService, 'ALGORITHM', 'HS256')
+        adminAccessService.tokenService = tokenService
     }
 
-    @Ignore
-    def "info should be retrieved from server"(){
+//    @Ignore
+    def "info should be retrieved from server"() {
         when: 'I call getInfo on AuthenticationService'
         def reply = authenticationService.info
         log.info("Reply is $reply")
@@ -42,10 +50,12 @@ class AuthenticationServiceSpecification extends Specification {
         then: 'reply is json web token'
         reply ==~ /Bearer \w+\.\w+\..+/
         when: 'I call login with wrong credentials'
-        reply = authenticationService.login('admin', 'mimi')
+        def reply2 = authenticationService.login('admin', 'mimi')
         log.info("Reply is $reply")
         then: 'reply is null'
-        reply == null
+        reply2 == null
+        cleanup: 'logout'
+        adminAccessService.logout(tokenService.parseToken(reply).credentials)
     }
 
 //    @Ignore
@@ -56,10 +66,12 @@ class AuthenticationServiceSpecification extends Specification {
         then: 'reply is json web token'
         reply ==~ /Bearer \w+\.\w+\..+/
         when: 'I call login with wrong credentials'
-        reply = authenticationService.jwtsLogin('admin', 'mimi')
+        def reply2 = authenticationService.jwtsLogin('admin', 'mimi')
         log.info("Reply is $reply")
         then: 'reply is null'
-        reply == null
+        reply2 == null
+        cleanup: 'logout'
+        adminAccessService.logout(tokenService.parseToken(reply).credentials)
     }
 
     def 'should get a restricted resource with a good webtoken'() {
@@ -72,6 +84,32 @@ class AuthenticationServiceSpecification extends Specification {
         log.info("Reply is $reply")
         then: 'I get the requested reply'
         reply
+        cleanup: 'logout'
+        adminAccessService.logout(tokenService.parseToken(token).credentials)
+    }
 
+    def 'login, logout should succeed with adminAccessService'() {
+        when: 'I call jwtsLogin with suitable credentials'
+        def claims = adminAccessService.jwtsLogin('admin', 'admin')
+        log.info("Reply is $claims")
+        then: 'claims is map with all needed infos'
+        claims.sub == 'admin'
+        claims.credentials
+        when: 'I create a user'
+        def ok = adminAccessService.createUser(claims.credentials, 'wolf', 'schaf', ['BLÖK'])
+        then: 'as admin I can do it'
+        ok
+        when: 'I logout (logout always returnd 200 OK)'
+        adminAccessService.logout(claims.credentials)
+        ok = adminAccessService.deleteUser(claims.credentials, 'wolf')
+        then:'no more admin ops should succeed'
+        !ok
+        when: 'I login again for new authentication token'
+        claims = adminAccessService.jwtsLogin('admin', 'admin')
+        ok = adminAccessService.deleteUser(claims.credentials, 'wolf')
+        then: 'delete operation should succeed'
+        ok
+        cleanup: 'logout again'
+        adminAccessService.logout(claims.credentials)
     }
 }

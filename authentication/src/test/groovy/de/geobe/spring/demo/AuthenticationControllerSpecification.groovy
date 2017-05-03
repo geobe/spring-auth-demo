@@ -7,8 +7,6 @@ import de.geobe.spring.demo.service.TokenService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.transaction.annotation.Transactional
-import spock.lang.Ignore
 import spock.lang.Specification
 
 /**
@@ -27,7 +25,7 @@ class AuthenticationControllerSpecification extends Specification {
     @Autowired
     UserRepository userRepository
 
-    @Ignore
+//    @Ignore
     def "info should be retrieved from server"() {
         when: 'I call getInfo on AuthenticationService'
         def reply = authenticationTestService.info
@@ -36,7 +34,7 @@ class AuthenticationControllerSpecification extends Specification {
         reply == '{hurz=42, burz=26, demo=-7, quack={message=never, answer=perhaps}}'
     }
 
-    @Ignore
+//    @Ignore
     def 'login should return a web token or null on failure'() {
         when: 'I call login with suitable credentials'
         def reply = authenticationTestService.login('admin', 'admin')
@@ -50,7 +48,7 @@ class AuthenticationControllerSpecification extends Specification {
         reply == null
     }
 
-    @Ignore
+//    @Ignore
     def 'login with jwts should return a web token or null on failure'() {
         when: 'I call jwtsLogin with suitable credentials'
         def reply = adminTestService.jwtsLogin('admin', 'admin')
@@ -64,7 +62,7 @@ class AuthenticationControllerSpecification extends Specification {
         reply == null
     }
 
-    @Ignore
+//    @Ignore
     def 'should get a restricted resource with a good webtoken'() {
         when: 'I call login with suitable credentials'
         def token = adminTestService.jwtsLogin('admin', 'admin')
@@ -78,7 +76,7 @@ class AuthenticationControllerSpecification extends Specification {
 
     }
 
-    @Ignore
+//    @Ignore
     def 'should be able to create a new user'() {
         when: 'I create a new user using jwts'
         def name = 'Humpert' + System.currentTimeMillis()
@@ -94,13 +92,9 @@ class AuthenticationControllerSpecification extends Specification {
         then: 'user should be authenticated and existing in database'
         uname == name
         userRepository.findByUsername(name)
-//        when: 'I look into SecurityContext (via TokenService)'
-//        def authname = tokenService.currentUser
-//        then: 'the user should be registered there'
-//        authname == name
     }
 
-    @Ignore
+//    @Ignore
     def 'should be able to modify a user'() {
         when: 'I create a new user using jwts'
         def name = 'Humpert' + System.currentTimeMillis()
@@ -121,7 +115,7 @@ class AuthenticationControllerSpecification extends Specification {
         !u.roles.collect { it.authority }.contains('ROLE_HAPPY')
     }
 
-    @Ignore
+//    @Ignore
     def 'should be able to delete a user'() {
         when: 'I find sample users'
         def humperts = userRepository.findByUsernameLike('Humpert%')

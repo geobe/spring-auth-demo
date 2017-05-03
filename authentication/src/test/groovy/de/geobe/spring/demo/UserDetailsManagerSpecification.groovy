@@ -28,13 +28,13 @@ class UserDetailsManagerSpecification extends Specification {
     @Autowired
     RoleRepository roleRepository
 
-    @Ignore
+//    @Ignore
     def "should boot up without errors"() {
         expect: "web application context exists"
         context != null
     }
 
-    @Ignore
+//    @Ignore
     def "there should be an admin created"() {
         when: 'look for user admin'
         def u = userDetailsManager.loadUserByUsername('admin')
@@ -43,7 +43,7 @@ class UserDetailsManagerSpecification extends Specification {
         u?.authorities.size() == 3
     }
 
-    @Ignore
+//    @Ignore
     @Transactional
     def "should be possible to create new user with a new role"() {
         when: 'I create a new user'
