@@ -74,6 +74,7 @@ class AuthenticationServiceSpecification extends Specification {
         adminAccessService.logout(tokenService.parseToken(reply).credentials)
     }
 
+//    @Ignore
     def 'should get a restricted resource with a good webtoken'() {
         when: 'I call login with suitable credentials'
         def token = authenticationService.jwtsLogin('admin', 'admin')
@@ -88,28 +89,58 @@ class AuthenticationServiceSpecification extends Specification {
         adminAccessService.logout(tokenService.parseToken(token).credentials)
     }
 
+//    @Ignore
     def 'login, logout should succeed with adminAccessService'() {
         when: 'I call jwtsLogin with suitable credentials'
         def claims = adminAccessService.jwtsLogin('admin', 'admin')
         log.info("Reply is $claims")
+        def cred = claims.credentials
         then: 'claims is map with all needed infos'
         claims.sub == 'admin'
-        claims.credentials
+        cred
         when: 'I create a user'
-        def ok = adminAccessService.createUser(claims.credentials, 'wolf', 'schaf', ['BLÖK'])
+        def del = adminAccessService.deleteUser(cred, 'wolf')
+        log.info("deleted user wolf ($del)")
+        def ok = adminAccessService.createUser(cred, 'wolf', 'schaf', ['BLÖK'])
         then: 'as admin I can do it'
         ok
         when: 'I logout (logout always returnd 200 OK)'
-        adminAccessService.logout(claims.credentials)
-        ok = adminAccessService.deleteUser(claims.credentials, 'wolf')
+        adminAccessService.logout(cred)
+        ok = adminAccessService.deleteUser(cred, 'wolf')
         then:'no more admin ops should succeed'
         !ok
         when: 'I login again for new authentication token'
         claims = adminAccessService.jwtsLogin('admin', 'admin')
-        ok = adminAccessService.deleteUser(claims.credentials, 'wolf')
+        cred = claims.credentials
+        ok = adminAccessService.deleteUser(cred, 'wolf')
         then: 'delete operation should succeed'
         ok
-        cleanup: 'logout again'
-        adminAccessService.logout(claims.credentials)
+        cleanup: 'and logout again'
+        adminAccessService.deleteUser(cred, 'wolf')
+        adminAccessService.logout(cred)
+    }
+
+//    @Ignore
+    def 'creating and deleting roles should work sensibly'() {
+        when: 'after login as admin I create a new user with two roles'
+        log.info("adminAccessService is $adminAccessService")
+        def loginresult = adminAccessService.jwtsLogin('admin', 'admin')
+        def cred = loginresult.credentials
+        ok = adminAccessService.deleteUser(cred, 'wolf')
+        def ok = adminAccessService.createUser(cred, 'wolf', 'schaf', ['BLÖK', 'KNURR'])
+        and: 'I get a list of all roles'
+        def roles = (List<String>) adminAccessService.getRoles(cred)
+        log.info("roles in db are $roles")
+        then: 'wolf is there and it contains Roles of new user'
+        ok
+        roles.containsAll(['BLÖK', 'KNURR'])
+        when: 'I delete one role of wolf'
+        adminAccessService.deleteRole(cred, 'KNURR')
+        roles = (List<String>) adminAccessService.getRoles(cred)
+        then: 'role should be removed from db'
+        ! roles.contains('KNURR')
+        cleanup: ' delete wolf and its roles and logout'
+        adminAccessService.deleteRole(cred, 'BLÖK')
+        adminAccessService.logout(cred)
     }
 }

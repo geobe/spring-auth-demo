@@ -8,10 +8,11 @@ import de.geobe.spring.demo.service.TokenService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
-import org.springframework.security.authentication.ProviderManager
+import org.springframework.security.access.vote.RoleVoter
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -40,6 +41,9 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     TokenService tokenService
     @Autowired
     private BCryptPasswordEncoder passwordEncoder
+    @Autowired
+    ApplicationContext context
+
 
     @Bean
     @Autowired
@@ -75,7 +79,6 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
                 .and()
                 .logout()
                 .logoutSuccessHandler(logoutSuccessHandler)
-//                .addLogoutHandler(new JWTLogoutHandler())
                 .and()
         // We filter the api/login requests
                 .addFilterBefore(new JWTLoginFilter("/login", authenticationManager()),
@@ -84,11 +87,7 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(new JWTAuthenticationFilter(),
                 UsernamePasswordAuthenticationFilter.class);
 //        http.anonymous().disable()
-        def autman = authenticationManager()
-        if (autman instanceof ProviderManager) {
-            ProviderManager pm = (ProviderManager) autman;
-            pm.providers.add(new TokenAuthenticationProvider())
-        }
+//        def autman = authenticationManager()
     }
 
 }

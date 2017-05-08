@@ -105,6 +105,34 @@ class AdminController {
         response.setStatus(HttpStatus.OK.value())
         return "${content.user} deleted"
     }
+
+    @RequestMapping(path = '/jwts/getroles', method = RequestMethod.POST)
+    @ResponseBody
+    public String getRoles(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+        def rolelist = userDetailsManager.getRoles()
+        def roles = '[' + rolelist.join(',') + ']'
+        def token = tokenService.makeToken([roles: rolelist], '')
+        response.setStatus(HttpStatus.OK.value())
+        return token
+    }
+
+    @RequestMapping(path = '/jwts/deleterole', method = RequestMethod.POST)
+    @ResponseBody
+    public String deleteRoleFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+        Map<String, Object> content = tokenService.getTokenContent(headers)
+        def del = userDetailsManager.deleteRole(content.rolename)
+        response.setStatus(del ? HttpStatus.OK.value() : HttpStatus.NOT_FOUND.value())
+        return "${content.rolename} deleted ($del)"
+    }
+
+    @RequestMapping(path = '/jwts/createrole', method = RequestMethod.POST)
+    @ResponseBody
+    public String createRoleFromJwts(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
+        Map<String, Object> content = tokenService.getTokenContent(headers)
+        def cr = userDetailsManager.createRole(content.rolename)
+        response.setStatus(cr ? HttpStatus.CREATED.value() : HttpStatus.CONFLICT.value())
+        return "${content.user} deleted"
+    }
 }
 
 class UserInfo {

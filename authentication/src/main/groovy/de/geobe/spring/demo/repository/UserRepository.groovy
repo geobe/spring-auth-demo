@@ -10,6 +10,6 @@ import org.springframework.data.jpa.repository.Query
 interface UserRepository extends JpaRepository<User, Long> {
     User findByUsername(String name)
     List<User> findByUsernameLike(String name)
-    @Query("from User u left join u.roles role where role.name = ?1")
-    List<User> selectByRole(String rolename)
+    @Query("select u from User u join u.roles r where r.name = ?1")
+    List<User> selectByRoleName(String rolename)
 }

@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * Created by georg beier on 17.04.2017.
+ * Implementation of spring's UserDetailsManager for our specific database schema
+ * Some additional methods are added for explicit role management.
  */
 @Service
 class TokenUserDetailsManager implements UserDetailsManager {
@@ -117,5 +119,57 @@ class TokenUserDetailsManager implements UserDetailsManager {
     boolean userExists(String username) {
         User u = userRepository.findByUsername(username)
         return u != null
+    }
+
+    /**
+     * delete a role and remove it from all users that have this role. As usual in spring,
+     * standard role prefix from RoleVoter (default is ROLE_) is prepended before rolename.
+     * @param rolename without prefix
+     * @return true if there was a role found for deletion
+     */
+    @Transactional
+    boolean deleteRole(String rolename) {
+        def pfx = 'ROLE_'
+        Role role = roleRepository.findByName(pfx + rolename)
+        if(role) {
+            List<User> users = userRepository.selectByRoleName(pfx+rolename)
+            users.each { User user ->
+                user.removeRole(role)
+            }
+            roleRepository.delete(role.id)
+            return true
+        }
+        return false
+    }
+
+    /**
+     * create a new role in the repository. As usual in spring,
+     * standard role prefix from RoleVoter (default is ROLE_) is prepended before rolename.
+     * @param rolename without prefix
+     * @return true if no exception caused by unique constraint violation was thrown
+     */
+    @Transactional
+    boolean createRole(String rolename) {
+        def pfx = 'ROLE_'
+        try {
+            def role = new Role(name: pfx+rolename)
+            roleRepository.saveAndFlush(role)
+            return true
+        } catch (RuntimeException rex) {
+            return false
+        }
+    }
+
+    /**
+     * get all role names with prefix stripped
+     * @return List of role names
+     */
+    @Transactional(readOnly = true)
+    def getRoles(){
+        def roles = roleRepository.findAll()
+        def pfx = 'ROLE_'
+        return roles.collect { role ->
+            role.authority.replace(pfx, '')
+        }
     }
 }
