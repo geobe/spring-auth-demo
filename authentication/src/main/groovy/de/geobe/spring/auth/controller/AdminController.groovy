@@ -25,23 +25,23 @@ class AdminController {
     @Autowired
     TokenService tokenService
 
-    @RequestMapping(path = '/user', method = RequestMethod.POST)
-    @ResponseBody
-    public String create(@RequestBody UserInfo ui, HttpServletResponse response) {
-        log.info("user: ${ui.user}, pw: ${ui.pw}, roles: ${ui.roles}")
-        log.info("Response: $response")
-        User.UserBuilder builder = User.withUsername(ui.user);
-        builder.password(ui.pw);
-        builder.roles(ui.roles);
-        try {
-            userDetailsManager.createUser(builder.build())
-            response.setStatus(HttpStatus.CREATED.value())
-            return 'created'
-        } catch (Exception ex) {
-            response.setStatus(HttpStatus.CONFLICT.value())
-            return "Creation of ${ui.user} failed"
-        }
-    }
+//    @RequestMapping(path = '/user', method = RequestMethod.POST)
+//    @ResponseBody
+//    public String create(@RequestBody UserInfo ui, HttpServletResponse response) {
+//        log.info("user: ${ui.user}, pw: ${ui.pw}, roles: ${ui.roles}")
+//        log.info("Response: $response")
+//        User.UserBuilder builder = User.withUsername(ui.user);
+//        builder.password(ui.pw);
+//        builder.roles(ui.roles);
+//        try {
+//            userDetailsManager.createUser(builder.build())
+//            response.setStatus(HttpStatus.CREATED.value())
+//            return 'created'
+//        } catch (Exception ex) {
+//            response.setStatus(HttpStatus.CONFLICT.value())
+//            return "Creation of ${ui.user} failed"
+//        }
+//    }
 
     @RequestMapping(path = '/jwts/createuser', method = RequestMethod.POST)
     @ResponseBody
