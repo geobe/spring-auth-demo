@@ -13,7 +13,7 @@ import org.springframework.web.client.RestTemplate
  */
 @Slf4j
 @Service
-class AdminAccessService {
+class AdminAccessImpl implements AdminAccess {
     @Autowired
     TokenService tokenService
 
@@ -25,6 +25,7 @@ class AdminAccessService {
      * @return map with credentials from returned JWTS or empty map on failure.
      *  The credentials token is used as authentication token for all furter requests.
      */
+    @Override
     def jwtsLogin(String uname, String pw, String url = 'http://localhost:8070/login') {
         RestTemplate template = tokenService.makeTemplate()
         def uri = new URI(url)
@@ -47,6 +48,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return true on success
      */
+    @Override
     def createUser(String credentials,
                    String uname,
                    String pw,
@@ -74,6 +76,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return true on success
      */
+    @Override
     def updateUser(String credentials,
                    String uname,
                    String pw,
@@ -99,6 +102,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return true on success
      */
+    @Override
     def deleteUser(String credentials,
                    String uname,
                    String url = 'http://localhost:8070/admin/jwts/deleteuser') {
@@ -119,6 +123,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return list of existing role names
      */
+    @Override
     def getUsers(String credentials,
                  String url = 'http://localhost:8070/admin/jwts/getusers') {
         if (credentials) {
@@ -131,6 +136,7 @@ class AdminAccessService {
             return users
         }
     }
+
     /**
      * create new role with all params stored in a secure JSON Web Token (JWTS) (admin only)
      * @param credentials token from login used for authentication
@@ -138,6 +144,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return true on success
      */
+    @Override
     def createRole(String credentials,
                    String rolename,
                    String url = 'http://localhost:8070/admin/jwts/createrole') {
@@ -160,6 +167,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return true on success
      */
+    @Override
     def deleteRole(String credentials,
                    String rolename,
                    String url = 'http://localhost:8070/admin/jwts/deleterole') {
@@ -181,6 +189,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return list of existing role names
      */
+    @Override
     def getRoles(String credentials,
                    String url = 'http://localhost:8070/admin/jwts/getroles') {
         if (credentials) {
@@ -202,6 +211,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return true on success
      */
+    @Override
     def changePassword(String credentials,
                        String oldpassword,
                        String newpassword,
@@ -222,6 +232,7 @@ class AdminAccessService {
      * @param url REST URL
      * @return true on success
      */
+    @Override
     def logout(String credentials,
                String url = 'http://localhost:8070/logout') {
         RestTemplate template = tokenService.makeTemplate(200, 403)
