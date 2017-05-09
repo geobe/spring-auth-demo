@@ -14,7 +14,7 @@ apply plugin: 'groovy'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 
-version = '0.0.1-SNAPSHOT'
+version = '0.0.2-SNAPSHOT'
 sourceCompatibility = 1.8
 ext['spock.version'] = '1.1'
 
@@ -32,6 +32,8 @@ dependencies {
 	compile('org.codehaus.groovy:groovy-all')
 	compile 'io.jsonwebtoken:jjwt:0.7.0'
 	compile project(':authentication')
+	compile project(':authutil')
+//	testCompile project(':authutil')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile ("org.spockframework:spock-core:1.1-groovy-2.4-rc-4")
 	testCompile('org.spockframework:spock-spring:1.1-groovy-2.4-rc-4')
