@@ -21,3 +21,6 @@ the AdminAccess interface.
 ## acl3
 is the empty wrapper project for the other modules.
 
+# RESTful api
+The REST api needs some rework to become really restful.
+
